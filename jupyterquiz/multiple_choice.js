@@ -242,17 +242,54 @@ function make_mc(qa, shuffle_answers, outerqDiv, qDiv, aDiv, id) {
         // Create div for code inside question
         var codeSpan;
         if ("code" in item) {
-            codeSpan = document.createElement('span');
-            codeSpan.id = "code" + id + index;
-            codeSpan.className = "QuizCode";
-            var codePre = document.createElement('pre');
-            codeSpan.append(codePre);
-            var codeCode = document.createElement('code');
-            codePre.append(codeCode);
-            codeCode.innerHTML = item.code;
-            lab.append(codeSpan);
-            //console.log(codeSpan);
+    codeSpan = document.createElement('span');
+    codeSpan.id = "code" + id + index;
+    codeSpan.className = "QuizCode";
+    
+    // Create a container for the Colab iframe
+    var colabContainer = document.createElement('div');
+    colabContainer.className = "ColabContainer";
+    
+    // Create the Colab iframe
+    var colabFrame = document.createElement('iframe');
+    colabFrame.width = "100%";
+    colabFrame.height = "300px"; // You can adjust this
+    
+    // Setup the Colab URL with the Python code
+    var pythonCode = encodeURIComponent(item.code);
+    colabFrame.src = `https://colab.research.google.com/drive/1LgxPzgAfpkk5oY4-KfZlA_5Ctyw1EOUx?cell=form&output=embed#cellId=codeCell${id}${index}&code=${pythonCode}`;
+    
+    // Append the iframe to the container
+    colabContainer.appendChild(colabFrame);
+    
+    // If you still want to display the code in your quiz interface
+    var codePre = document.createElement('pre');
+    var codeCode = document.createElement('code');
+    codeCode.innerHTML = item.code;
+    codePre.appendChild(codeCode);
+    codeSpan.appendChild(codePre);
+    
+    // Add a toggle button to show/hide the Colab
+    var toggleButton = document.createElement('button');
+    toggleButton.textContent = "Open in Colab";
+    toggleButton.className = "ToggleColabButton";
+    toggleButton.onclick = function() {
+        if (colabContainer.style.display === "none") {
+            colabContainer.style.display = "block";
+            toggleButton.textContent = "Hide Colab";
+        } else {
+            colabContainer.style.display = "none";
+            toggleButton.textContent = "Open in Colab";
         }
+    };
+    
+    // Initially hide the Colab iframe
+    colabContainer.style.display = "none";
+    
+    codeSpan.appendChild(toggleButton);
+    codeSpan.appendChild(colabContainer);
+    lab.appendChild(codeSpan);
+}
 
         //lab.textContent=item.answer;
 
