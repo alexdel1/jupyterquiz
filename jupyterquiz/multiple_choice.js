@@ -244,72 +244,52 @@ if ("code" in item) {
     codeSpan.id = "code" + id + index;
     codeSpan.className = "QuizCode";
     
-    // Display the code
+    // Display the code as before
     var codePre = document.createElement('pre');
     codeSpan.append(codePre);
     var codeCode = document.createElement('code');
     codePre.append(codeCode);
     codeCode.innerHTML = item.code;
     
-    // Create a "Run in Colab" button
-    var colabButton = document.createElement('a');
-    colabButton.innerHTML = '<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>';
-    colabButton.className = "ColabButton";
+    // Add a button to execute the code
+    var runButton = document.createElement('button');
+    runButton.textContent = "Run Python Code";
+    runButton.className = "RunPythonButton";
+    runButton.style.marginTop = "10px";
+    runButton.style.padding = "5px 10px";
+    runButton.style.backgroundColor = "#4285F4";
+    runButton.style.color = "white";
+    runButton.style.border = "none";
+    runButton.style.borderRadius = "4px";
+    runButton.style.cursor = "pointer";
     
-    // Generate a notebook with this code on the fly
-    colabButton.onclick = function(e) {
-        e.preventDefault();
+    // Create a div to show results
+    var resultsDiv = document.createElement('div');
+    resultsDiv.id = "results" + id + index;
+    resultsDiv.className = "PythonResults";
+    resultsDiv.style.marginTop = "10px";
+    resultsDiv.style.padding = "10px";
+    resultsDiv.style.border = "1px solid #ccc";
+    resultsDiv.style.display = "none";
+    
+    // Use Colab's built-in kernel to execute the code
+    runButton.onclick = function() {
+        resultsDiv.style.display = "block";
+        resultsDiv.innerHTML = "Running code...";
         
-        // Create a JSON representation of a notebook with this code
-        var notebookJSON = {
-            "cells": [
-                {
-                    "cell_type": "code",
-                    "execution_count": null,
-                    "metadata": {},
-                    "source": [item.code],
-                    "outputs": []
-                }
-            ],
-            "metadata": {
-                "kernelspec": {
-                    "display_name": "Python 3",
-                    "language": "python",
-                    "name": "python3"
-                }
-            },
-            "nbformat": 4,
-            "nbformat_minor": 0
-        };
-        
-        // Convert to a blob and create a URL
-        var blob = new Blob([JSON.stringify(notebookJSON)], {type: 'application/json'});
-        var formData = new FormData();
-        formData.append('notebook', blob, 'notebook.ipynb');
-        
-        // Create a form to submit to Colab
-        var form = document.createElement('form');
-        form.action = 'https://colab.research.google.com/notebook';
-        form.method = 'post';
-        form.target = '_blank';
-        form.enctype = 'multipart/form-data';
-        
-        // Append form data
-        for (var pair of formData.entries()) {
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = pair[0];
-            input.value = pair[1];
-            form.appendChild(input);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
+        // Use Google.colab.kernel.invokeFunction to run Python code
+        google.colab.kernel.invokeFunction('executePython', [item.code], {})
+            .then(function(result) {
+                resultsDiv.innerHTML = "<pre>" + result.data['text/plain'] + "</pre>";
+            })
+            .catch(function(error) {
+                resultsDiv.innerHTML = "<pre>Error: " + error + "</pre>";
+            });
     };
     
-    codeSpan.appendChild(colabButton);
-    lab.appendChild(codeSpan);
+    codeSpan.append(runButton);
+    codeSpan.append(resultsDiv);
+    lab.append(codeSpan);
 }
 
         //lab.textContent=item.answer;
