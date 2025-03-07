@@ -239,55 +239,76 @@ function make_mc(qa, shuffle_answers, outerqDiv, qDiv, aDiv, id) {
         }
         lab.append(aSpan);
 
-        // Create div for code inside question
-        var codeSpan;
-        if ("code" in item) {
+if ("code" in item) {
     codeSpan = document.createElement('span');
     codeSpan.id = "code" + id + index;
     codeSpan.className = "QuizCode";
     
-    // Create a container for the Colab iframe
-    var colabContainer = document.createElement('div');
-    colabContainer.className = "ColabContainer";
-    
-    // Create the Colab iframe
-    var colabFrame = document.createElement('iframe');
-    colabFrame.width = "100%";
-    colabFrame.height = "300px"; // You can adjust this
-    
-    // Setup the Colab URL with the Python code
-    var pythonCode = encodeURIComponent(item.code);
-    colabFrame.src = `https://colab.research.google.com/drive/1LgxPzgAfpkk5oY4-KfZlA_5Ctyw1EOUx?cell=form&output=embed#cellId=codeCell${id}${index}&code=${pythonCode}`;
-    
-    // Append the iframe to the container
-    colabContainer.appendChild(colabFrame);
-    
-    // If you still want to display the code in your quiz interface
+    // Display the code
     var codePre = document.createElement('pre');
+    codeSpan.append(codePre);
     var codeCode = document.createElement('code');
+    codePre.append(codeCode);
     codeCode.innerHTML = item.code;
-    codePre.appendChild(codeCode);
-    codeSpan.appendChild(codePre);
     
-    // Add a toggle button to show/hide the Colab
-    var toggleButton = document.createElement('button');
-    toggleButton.textContent = "Open in Colab";
-    toggleButton.className = "ToggleColabButton";
-    toggleButton.onclick = function() {
-        if (colabContainer.style.display === "none") {
-            colabContainer.style.display = "block";
-            toggleButton.textContent = "Hide Colab";
-        } else {
-            colabContainer.style.display = "none";
-            toggleButton.textContent = "Open in Colab";
+    // Create a "Run in Colab" button
+    var colabButton = document.createElement('a');
+    colabButton.innerHTML = '<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>';
+    colabButton.className = "ColabButton";
+    
+    // Generate a notebook with this code on the fly
+    colabButton.onclick = function(e) {
+        e.preventDefault();
+        
+        // Create a JSON representation of a notebook with this code
+        var notebookJSON = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "execution_count": null,
+                    "metadata": {},
+                    "source": [item.code],
+                    "outputs": []
+                }
+            ],
+            "metadata": {
+                "kernelspec": {
+                    "display_name": "Python 3",
+                    "language": "python",
+                    "name": "python3"
+                }
+            },
+            "nbformat": 4,
+            "nbformat_minor": 0
+        };
+        
+        // Convert to a blob and create a URL
+        var blob = new Blob([JSON.stringify(notebookJSON)], {type: 'application/json'});
+        var formData = new FormData();
+        formData.append('notebook', blob, 'notebook.ipynb');
+        
+        // Create a form to submit to Colab
+        var form = document.createElement('form');
+        form.action = 'https://colab.research.google.com/notebook';
+        form.method = 'post';
+        form.target = '_blank';
+        form.enctype = 'multipart/form-data';
+        
+        // Append form data
+        for (var pair of formData.entries()) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = pair[0];
+            input.value = pair[1];
+            form.appendChild(input);
         }
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
     };
     
-    // Initially hide the Colab iframe
-    colabContainer.style.display = "none";
-    
-    codeSpan.appendChild(toggleButton);
-    codeSpan.appendChild(colabContainer);
+    codeSpan.appendChild(colabButton);
     lab.appendChild(codeSpan);
 }
 
